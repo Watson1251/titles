@@ -20,7 +20,7 @@ import { TitlesModule } from './titles/titles.module';
     TitlesModule,
     PrivilegesModule,
     LoginModule,
-    DashboardModule
+    DashboardModule,
   ],
   declarations: [
     PagesComponent

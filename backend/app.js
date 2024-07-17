@@ -12,6 +12,8 @@ const usersRoutes = require("./routes/users.route");
 const deepFakeRoutes = require("./routes/deep-fake.route");
 const fileUploadRoutes = require("./routes/file-upload.route");
 const authRoutes = require("./routes/auth.route");
+const categoriesRoutes = require("./routes/categories.route");
+const titlesRoutes = require("./routes/titles.route");
 
 const app = express();
 
@@ -58,6 +60,8 @@ app.use("/api/users", usersRoutes);
 app.use("/api/file-upload", fileUploadRoutes);
 app.use("/api/deep-fake", deepFakeRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoriesRoutes);
+app.use("/api/titles", titlesRoutes);
 app.use((req, res, next) => {
   res.sendFile(path.join(__dirname, "angular", "index.html"));
 });

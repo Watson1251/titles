@@ -9,19 +9,18 @@ import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/materia
 import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MAT_MOMENT_DATE_FORMATS, MomentDateAdapter } from '@angular/material-moment-adapter';
 import { SnackbarService } from '../../../services/snackbar.service';
 import { Helper } from '../../shared/helpers';
-import { User } from '../../../models/user.model';
-import { UsersService } from '../../../services/users.services';
-import { UserDialogInterface } from './user-dialog/user-dialog-interface';
-import { UserDialogComponent } from './user-dialog/user-dialog.component';
-import { Role } from '../../../models/role.model';
-import { RolesService } from '../../../services/roles.services';
+import { NbDialogService } from '@nebular/theme';
+import { TitleDialogInterface } from './title-dialog/title-dialog-interface';
+import { TitleDialogComponent } from './title-dialog/title-dialog.component';
+import { CategoriesService } from '../../../services/categories.services';
+import { TitlesService } from '../../../services/titles.services';
+import { Category } from '../../../models/category.model';
+import { Title } from '../../../models/title.model';
 
 interface RowData {
-  id: number,
-  userId: string,
-  name: string,
-  username: string,
-  role: string,
+  id: number;
+  title: Title;
+  category: Category;
 }
 
 @Component({
@@ -44,7 +43,7 @@ export class TitlesComponent {
 
   shownRows: RowData[] = [];
 
-  displayedColumns: string[] = ['select', 'id', 'name', 'username', 'role'];
+  displayedColumns: string[] = ['select', 'index', 'title', 'category', 'rarity', 'points', 'description'];
 
   dataSource: MatTableDataSource<RowData>;
   selection = new SelectionModel<RowData>(true, []);
@@ -59,26 +58,34 @@ export class TitlesComponent {
     }
   }
 
-  private rolesSub?: Subscription;
-  private usersSub?: Subscription;
+  private categoriesSub?: Subscription;
+  private titlesSub?: Subscription;
 
   searchValue: string = "";
 
-  roles: Role[] = [];
-  users: User[] = [];
-  sortedUsers: User[] = [];
-  selectedUser: User = {
+  categories: Category[] = [];
+  titles: Title[] = [];
+  sortedTitles: Title[] = [];
+  selectedTitle: Title = {
     id: '',
-    name: '',
-    username: '',
-    roleId: ''
+    index: 0,
+    categoryId: '',
+    nameAr: '',
+    nameEn: '',
+    rarity: '',
+    points: 0,
+    outof: 0,
+    descriptionAr: '',
+    descriptionEn: '',
+    notes: ''
   };
 
   constructor(
     public dialog: MatDialog,
-    public rolesService: RolesService,
-    public usersService: UsersService,
-    private snackbarService: SnackbarService
+    public categoriesService: CategoriesService,
+    public titlesService: TitlesService,
+    private snackbarService: SnackbarService,
+    private dialogService: NbDialogService
   ) {
     this.shownRows = this.generateRows();
     this.dataSource = new MatTableDataSource(this.shownRows);
@@ -86,15 +93,14 @@ export class TitlesComponent {
   }
 
   ngOnInit() {
+    this.categoriesService.getCategories();
+    this.categoriesSub = this.categoriesService.getCategoriesUpdateListener().subscribe((categoriesData: any) => {
+      this.categories = categoriesData;
 
-    this.rolesService.getRoles();
-    this.rolesSub = this.rolesService.getRolesUpdateListener().subscribe((rolesData: any) => {
-      this.roles = rolesData;
-
-      this.usersService.getUsers();
-      this.usersSub = this.usersService.getUsersUpdateListener().subscribe((usersData: any) => {
-        this.users = usersData;
-        this.sortedUsers = this.users.slice();
+      this.titlesService.getTitles();
+      this.titlesSub = this.titlesService.getTitlesUpdateListener().subscribe((titlesData: any) => {
+        this.titles = titlesData;
+        this.sortedTitles = this.titles.slice();
   
         this.shownRows = this.generateRows();
         this.dataSource = new MatTableDataSource(this.shownRows);
@@ -105,23 +111,22 @@ export class TitlesComponent {
   }
 
   ngOnDestroy() {
-    this.usersSub?.unsubscribe();
-    this.rolesSub?.unsubscribe();
+    this.categoriesSub?.unsubscribe();
+    this.titlesSub?.unsubscribe();
   }
 
   generateRows() {
     var rowData: RowData[] = [];
 
-    for (let i = 1; i <= this.sortedUsers.length; i++) {
-      const user = this.sortedUsers[i-1];
-      const role: Role = this.roles.find(object => object.id == user.roleId) as Role;
+    for (let i = 1; i <= this.sortedTitles.length; i++) {
+      const title = this.sortedTitles[i-1];
+      const category: Category = this.categories.find(object => object.id == title.categoryId) as Category;
       
+
       const data: RowData = {
         id: i,
-        userId: user.id,
-        name: user.name,
-        username: user.username,
-        role: role != null ? role.role : "لم يتم تحديده"
+        title: title,
+        category: category
       };
 
       rowData.push(data);
@@ -131,34 +136,36 @@ export class TitlesComponent {
   }
 
   sortData(sort: Sort) {
-    Helper.sortData(sort, this.users, this.sortedUsers)
-  }
-
-  getRoleById(id: string) {
-    const obj = this.roles.find(item => item.id === id);
-    return obj ? obj['role'] : undefined;
+    Helper.sortData(sort, this.titles, this.sortedTitles)
   }
 
   openDialog(status: string) {
 
-    const dialogData: UserDialogInterface = {
+    const dialogData: TitleDialogInterface = {
       status: status,
-      selectedUser: this.selectedUser,
-      users: this.users,
-      roles: this.roles,
+      selectedTitle: this.selectedTitle,
+      titles: this.titles,
+      categories: this.categories,
     }
 
-    const dialogRef = this.dialog.open(UserDialogComponent, {
+    const dialogRef = this.dialog.open(TitleDialogComponent, {
       data: dialogData,
     });
 
     dialogRef.afterClosed().subscribe(result => {
       if (result == 'success') {
-        this.selectedUser = {
+        this.selectedTitle = {
           id: '',
-          name: '',
-          username: '',
-          roleId: ''
+          index: 0,
+          categoryId: '',
+          nameAr: '',
+          nameEn: '',
+          rarity: '',
+          points: 0,
+          outof: 0,
+          descriptionAr: '',
+          descriptionEn: '',
+          notes: ''
         };
 
         if (status == "add") {
@@ -178,19 +185,26 @@ export class TitlesComponent {
 
     if (isSelected) {
       this.selection.deselect(row);
-      this.selectedUser = {
+      this.selectedTitle = {
         id: '',
-        name: '',
-        username: '',
-        roleId: ''
+        index: 0,
+        categoryId: '',
+        nameAr: '',
+        nameEn: '',
+        rarity: '',
+        points: 0,
+        outof: 0,
+        descriptionAr: '',
+        descriptionEn: '',
+        notes: ''
       };
     } else {
       this.selection.select(row);
 
-      var user = this.users.find(a => a.id == row.userId);
+      var title = this.titles.find(a => a.id == row.title.titleId);
 
-      if (user) {
-        this.selectedUser = user;
+      if (title) {
+        this.selectedTitle = title;
       }
     }
   }
@@ -211,19 +225,19 @@ export class TitlesComponent {
   isAllowed(action: string): boolean {
     switch (action) {
       case "add-empty":
-        return this.users.length == 0;
+        return this.titles.length == 0;
 
       case "add":
-        return this.users.length > 0;
+        return this.titles.length > 0;
 
       case "edit":
-        return (this.users.length > 0) && (this.selectedUser.id != "");
+        return (this.titles.length > 0) && (this.selectedTitle.id != "");
 
       case "delete":
-        return (this.users.length > 0) && (this.selectedUser.id != "");
+        return (this.titles.length > 0) && (this.selectedTitle.id != "");
 
       case "view":
-        return this.users.length > 0;
+        return this.titles.length > 0;
 
       default:
         return false;
