@@ -104,6 +104,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.router.navigate(['/pages/privileges']);
   }
 
+  goToTitles() {
+    this.router.navigate(['/pages/titles']);
+  }
+
   toggleSidebar(): boolean {
     this.sidebarService.toggle(true, 'menu-sidebar');
     this.layoutService.changeLayoutSize();

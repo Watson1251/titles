@@ -1,6 +1,6 @@
 <div class="header-container">
   <div class="logo-container">
-    <a
+    <!-- <a
       href="#"
       class="sidebar-toggle"
       matRipple
@@ -9,7 +9,7 @@
       (click)="toggleSidebar()"
     >
       <nb-icon [icon]="(materialTheme$ | async) ? 'menu-outline' : 'menu-2-outline'"></nb-icon>
-    </a>
+    </a> -->
     <a class="logo" href="#" (click)="navigateHome()">منصة الذكاء الاصطناعي</a>
   </div>
 </div>
@@ -17,6 +17,11 @@
 <div class="header-container">
 
   <nb-actions size="small">
+
+    <nb-action class="control-item" matRipple [matRippleUnbounded]="true" [matRippleCentered]="true" (click)="goToTitles()">
+      <nb-icon icon="star-outline"></nb-icon>
+      إدارة الألقاب
+    </nb-action>
 
     <nb-action class="control-item" matRipple [matRippleUnbounded]="true" [matRippleCentered]="true" (click)="goToUsers()">
       <nb-icon icon="people-outline"></nb-icon>

@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PagesComponent } from './pages.component';
 import { LoginModule } from '../login/login.module';
+import { TitlesModule } from './titles/titles.module';
 
 @NgModule({
   imports: [
@@ -16,6 +17,7 @@ import { LoginModule } from '../login/login.module';
     NbMenuModule,
     NbLayoutModule,
     UsersModule,
+    TitlesModule,
     PrivilegesModule,
     LoginModule,
     DashboardModule
