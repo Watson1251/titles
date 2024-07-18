@@ -8,6 +8,9 @@ import { UsersService } from '../../../../services/users.services';
 import { Role } from '../../../../models/role.model';
 import { TitleDialogInterface } from './title-dialog-interface';
 import { Category } from '../../../../models/category.model';
+import { Title } from '../../../../models/title.model';
+import { TitlesService } from '../../../../services/titles.services';
+import { SnackbarService } from '../../../../services/snackbar.service';
 
 @Component({
   selector: 'app-title-dialog',
@@ -16,14 +19,23 @@ import { Category } from '../../../../models/category.model';
 })
 export class TitleDialogComponent {
 
+  rarityList: string[] = ["شائع - (Common)", "غير شائع - (Uncommon)", "نادر - (Rare)", "مميز - (Hero)"];
+
   title = '';
   errorMessage = '';
 
   isDelete: boolean = false;
   isTitleFound: boolean = false;
+  isCategoryFound: boolean = false;
+  showCategoryField: boolean = false;
 
   submitButton = '';
   cancelButton = 'إلغاء';
+
+
+  categoryArLabel = 'الفئة (بالعربية)';
+  categoryEnLabel = 'الفئة (بالإنجليزية)';
+  categoryArError = 'الرجاء كتابة الفئة بالعربية';
 
   indexLabel = 'رقم اللقب';
   nameArLabel = 'اللقب (بالعربية)';
@@ -33,7 +45,7 @@ export class TitleDialogComponent {
   pointsLabel = 'عدد النقاط';
   outofLabel = 'المطلوب لإتمام اللقب';
   descriptionArLabel = 'الوصف  (بالعربية)';
-  descriptionEnLabel = 'الوصف  (بالعربية)';
+  descriptionEnLabel = 'الوصف  (بالإنجليزية)';
   notesLabel = 'الملاحظات';
 
   indexError = 'الرجاء كتابة رقم اللقب';
@@ -48,7 +60,7 @@ export class TitleDialogComponent {
   // notesError = 'الرجاء كتابة الملاحظات';
 
   formValidator: FormGroup = new FormGroup({
-    index: new FormControl('', [Validators.required]),
+    index: new FormControl('', [Validators.required, Validators.min(0)]),
     nameAr: new FormControl('', [Validators.required ]),
     nameEn: new FormControl('', []),
     category: new FormControl('', [Validators.required ]),
@@ -60,11 +72,17 @@ export class TitleDialogComponent {
     notes: new FormControl('', []),
   });
 
+  categoryValidator: FormGroup = new FormGroup({
+    categoryAr: new FormControl('', [Validators.required ]),
+    categoryEn: new FormControl('', [Validators.required ]),
+  });
+
   constructor(
     private changeDetectorRef: ChangeDetectorRef,
     public dialogRef: MatDialogRef<TitleDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: TitleDialogInterface,
-    public usersService: UsersService,
+    public snackbarService: SnackbarService,
+    public titlesService: TitlesService,
   ) {}
 
   ngOnInit() {
@@ -74,6 +92,14 @@ export class TitleDialogComponent {
     if (this.data.status == "add") {
       this.title = 'إضافة لقب جديد';
       this.submitButton = 'إضافة';
+
+      if (this.data.titles.length == 0) {
+        this.formValidator.get('index')?.setValue(0);
+      } else {
+        const lastTitle = this.data.titles.reduce((max, title) => title.index > max.index ? title : max);
+        this.formValidator.get('index')?.setValue(lastTitle.index + 1);
+      }
+      
     } else if (this.data.status == "edit") {
       this.title = `تعديل اللقب "${titleStr}"`;
       
@@ -88,6 +114,7 @@ export class TitleDialogComponent {
       this.formValidator.get('points')?.setValue(this.data.selectedTitle.points);
       this.formValidator.get('outof')?.setValue(this.data.selectedTitle.outof);
       this.formValidator.get('descriptionAr')?.setValue(this.data.selectedTitle.descriptionAr);
+      this.formValidator.get('descriptionEn')?.setValue(this.data.selectedTitle.descriptionEn);
       this.formValidator.get('notes')?.setValue(this.data.selectedTitle.notes);
 
       this.submitButton = 'تعديل';
@@ -98,67 +125,94 @@ export class TitleDialogComponent {
     }
   }
 
+  preventDecimal(event: KeyboardEvent) {
+    if (event.key === '.' || event.key === ',' || event.key === '-') {
+      event.preventDefault();
+    }
+  }
+
+  newCategory() {
+    this.showCategoryField = true;
+    this.formValidator.get('index')?.disable();
+    this.formValidator.get('nameAr')?.disable();
+    this.formValidator.get('nameEn')?.disable();
+    this.formValidator.get('category')?.disable();
+    this.formValidator.get('rarity')?.disable();
+    this.formValidator.get('points')?.disable();
+    this.formValidator.get('outof')?.disable();
+    this.formValidator.get('descriptionAr')?.disable();
+    this.formValidator.get('descriptionEn')?.disable();
+    this.formValidator.get('notes')?.disable();
+  }
+
   onNoClick(): void {
     this.dialogRef.close();
   }
 
   onYesClick() {
 
-    // if (this.data.status == 'delete') {
+    if (this.data.status == 'delete') {
 
-    //   const index = this.data.users.indexOf(this.data.selectedUser);
-    //   if (index > -1) {
-    //     this.usersService.deleteUser(this.data.selectedUser).subscribe(response => {
-    //       if (response.status == 200 || response.status == 201) {
-    //         this.usersService.getUsers();
-    //         this.dialogRef.close('success');
-    //       }
-    //     });
-    //   }
+      const index = this.data.titles.indexOf(this.data.selectedTitle);
+      if (index > -1) {
+        // this.usersService.deleteUser(this.data.selectedUser).subscribe(response => {
+        //   if (response.status == 200 || response.status == 201) {
+        //     this.usersService.getUsers();
+        //     this.dialogRef.close('success');
+        //   }
+        // });
+      }
 
-    // } else {
+    } else {
 
-    //   if (this.isInvalid('all') || this.formValidator.value == null) {
-    //     return;
-    //   }
+      if (this.isInvalid('all') || this.formValidator.value == null) {
+        this.snackbarService.openSnackBar("الرجاء تعبئة الحقول الأساسية.", "failure");
+        return;
+      }
 
-    //   const role: Role = this.data.roles.find(object => object.role == this.formValidator.get('role')?.value) as Role;
-    //   const user = {
-    //     id: '',
-    //     name: this.formValidator.get('name')?.value,
-    //     username: this.formValidator.get('username')?.value,
-    //     password: this.formValidator.get('password')?.value,
-    //     roleId: role.id
-    //   }
+      const category: Category = this.data.categories.find(object => `${object.categoryAr} (${object.categoryEn})` == this.formValidator.get('category')?.value) as Category;
+      const title: Title = {
+        id: '',
+        index: Number(this.formValidator.get('index')?.value),
+        categoryId: category.id,
+        nameAr: this.formValidator.get('nameAr')?.value,
+        nameEn: this.formValidator.get('nameEn')?.value,
+        rarity: this.formValidator.get('rarity')?.value,
+        points: this.formValidator.get('points')?.value,
+        outof: this.formValidator.get('outof')?.value,
+        descriptionAr: this.formValidator.get('descriptionAr')?.value,
+        descriptionEn: this.formValidator.get('descriptionEn')?.value,
+        notes: this.formValidator.get('notes')?.value,
+      }
 
-    //   if (this.data.status == 'add') {
+      if (this.data.status == 'add') {
 
-    //     this.usersService.createUser(user).subscribe(response => {
-    //       if (response.status == 200 || response.status == 201) {
-    //         this.usersService.getUsers();
-    //         this.dialogRef.close('success');
-    //       }
-    //     });
+        this.titlesService.createTitle(title).subscribe(response => {
+          if (response.status == 200 || response.status == 201) {
+            this.titlesService.getTitles();
+            this.dialogRef.close('success');
+          }
+        });
 
-    //   } else if (this.data.status == 'edit') {
+      } else if (this.data.status == 'edit') {
 
-    //     const index = this.data.users.indexOf(this.data.selectedUser);
+        const index = this.data.titles.indexOf(this.data.selectedTitle);
 
-    //     if (index > -1) {
+        if (index > -1) {
 
-    //       user.id = this.data.selectedUser.id;
+          title.id = this.data.selectedTitle.id;
 
-    //       this.usersService.updateUser(user).subscribe(response => {
-    //         if (response.status == 200 || response.status == 201) {
-    //           this.usersService.getUsers();
-    //           this.dialogRef.close('success');
-    //         }
-    //       });
-    //     }
+          // this.usersService.updateUser(user).subscribe(response => {
+          //   if (response.status == 200 || response.status == 201) {
+          //     this.usersService.getUsers();
+          //     this.dialogRef.close('success');
+          //   }
+          // });
+        }
 
-    //   }
+      }
 
-    // }
+    }
 
   }
 

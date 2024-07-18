@@ -10,3 +10,38 @@ h1 {
 mat-label, input, mat-error, button, ::ng-deep .mdc-form-field {
   font-family: var(--arabic-font) !important;
 }
+
+mat-form-field {
+  width: 100%;
+}
+
+
+.mat-icon {
+  font-size: 20px !important;
+  width: 20px;
+  height: 20px;
+}
+
+.mat-mdc-icon-button.mat-mdc-button-base {
+  top: 5px;
+}
+
+.mat-mdc-fab.mat-accent,
+.mat-mdc-mini-fab.mat-accent {
+  --mdc-fab-container-color: var(--main-color);
+  --mdc-fab-icon-color: #fff;
+  --mat-mdc-fab-color: #fff;
+  font-family: var(--arabic-font);
+}
+
+.add-button {
+  color: green;
+}
+
+.edit-button {
+  color: blue;
+}
+
+.delete-button {
+  color: red;
+}

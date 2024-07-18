@@ -3,53 +3,145 @@
     <h1 mat-dialog-title>{{title}}</h1>
   </nb-card-header>
   <nb-card-body>
+
     <div mat-dialog-content *ngIf="!isDelete" class="container-fluid">
   
       <form [formGroup]="formValidator">
   
         <div class="row">
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{indexLabel}}</mat-label>
+              <input matInput cdkFocusInitial type="number" min="0" inputmode="numeric"  pattern="[0-9]*" formControlName="index" (keypress)="preventDecimal($event)" (keyup.enter)="onYesClick()">
+              <mat-error *ngIf="isInvalid('index')">{{ isTitleFound ? "اللقب موجود بقائمة الألقاب" : indexError}}</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
   
-          <mat-form-field appearance="outline">
-            <mat-label>{{nameLabel}}</mat-label>
-            <input matInput cdkFocusInitial formControlName="name" (keyup.enter)="onYesClick()">
-            <mat-error *ngIf="isInvalid('name')">{{nameError}}</mat-error>
-          </mat-form-field>
+        <div class="row">
+
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{nameArLabel}}</mat-label>
+              <input matInput cdkFocusInitial formControlName="nameAr" (keyup.enter)="onYesClick()">
+              <mat-error *ngIf="isInvalid('nameAr')">{{ isTitleFound ? "اللقب موجود بقائمة الألقاب" : nameArError}}</mat-error>
+            </mat-form-field>
+          </div>
+
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{nameEnLabel}}</mat-label>
+              <input matInput cdkFocusInitial formControlName="nameEn" (keyup.enter)="onYesClick()">
+              <mat-error *ngIf="isInvalid('nameEn')">{{ isTitleFound ? "اللقب موجود بقائمة الألقاب" : nameEnError}}</mat-error>
+            </mat-form-field>
+          </div>
   
         </div>
   
         <div class="row">
-  
-          <mat-form-field appearance="outline">
-            <mat-label>{{usernameLabel}}</mat-label>
-            <input matInput cdkFocusInitial formControlName="username" (keyup.enter)="onYesClick()">
-            <mat-error *ngIf="isInvalid('username')">{{ isUsernameFound ? "اسم المستخدم موجود بقائمة المستخدمين" : usernameError}}</mat-error>
-          </mat-form-field>
+          <div class="col">
+            <mat-form-field *ngIf="data.categories.length > 0">
+              <mat-label>{{categoryLabel}}</mat-label>
+              <mat-select formControlName="category">
+                <mat-option *ngFor="let category of categories" [value]="category.nameAr">{{category}}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="isInvalid('category')">{{categoryError}}</mat-error>
+            </mat-form-field>
+
+            <button *ngIf="data.categories.length == 0 && !showCategoryField" mat-fab extended (click)="newCategory()">
+              <mat-icon *ngIf="showCategoryField">add</mat-icon> إضافة فئة جديدة
+            </button>
+            <button *ngIf="data.categories.length == 0 && showCategoryField" mat-fab extended (click)="newCategory()">
+              <mat-icon *ngIf="showCategoryField">check</mat-icon> تأكيد
+            </button>
+            <button *ngIf="data.categories.length == 0 && showCategoryField" mat-fab extended (click)="newCategory()">
+              <mat-icon *ngIf="showCategoryField">cancel</mat-icon> إلغاء
+            </button>
+          </div>
+
+          <div class="col">
+            <mat-form-field>
+              <mat-label>{{rarityLabel}}</mat-label>
+              <mat-select formControlName="rarity">
+                <mat-option *ngFor="let rarity of rarityList" [value]="rarity">{{rarity}}</mat-option>
+              </mat-select>
+              <mat-error *ngIf="isInvalid('rarity')">{{rarityError}}</mat-error>
+            </mat-form-field>
+          </div>
   
         </div>
+
   
-        <div class="row" style="padding-bottom: 10px;">
+        <form *ngIf="showCategoryField" [formGroup]="categoryValidator">
+          <div class="row">
+    
+            <div class="col">
+              <mat-form-field appearance="outline">
+                <mat-label>{{categoryArLabel}}</mat-label>
+                <input matInput cdkFocusInitial formControlName="categoryAr" (keyup.enter)="onYesClick()">
+                <mat-error *ngIf="isInvalid('categoryAr')">{{ isCategoryFound ? "الفئة موجودة بقائمة الفئات" : categoryArError}}</mat-error>
+              </mat-form-field>
+            </div>
   
-          <mat-form-field appearance="outline"  hintLabel="الحد الأدنى 6 حروف">
-            <mat-label>{{passwordLabel}}</mat-label>
-            <input matInput #password cdkFocusInitial formControlName="password" (keyup.enter)="onYesClick()"
-            [type]="isPasswordHide ? 'password' : 'text'">
-            <mat-icon matSuffix (click)="isPasswordHide = !isPasswordHide">{{isPasswordHide ? 'visibility_off' : 'visibility'}}</mat-icon>
-            <mat-hint align="end">{{password.value.length}}</mat-hint>
-            <mat-error *ngIf="isInvalid('password')">{{passwordError}}</mat-error>
-          </mat-form-field>
+            <div class="col">
+              <mat-form-field appearance="outline">
+                <mat-label>{{categoryEnLabel}}</mat-label>
+                <input matInput formControlName="categoryEn" (keyup.enter)="onYesClick()">
+                <mat-error *ngIf="isInvalid('categoryEn')">{{ isCategoryFound ? "الفئة موجودة بقائمة الفئات" : categoryEnError}}</mat-error>
+              </mat-form-field>
+            </div>
+  
+          </div>
+        </form>
+  
+        <div class="row">
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{pointsLabel}}</mat-label>
+              <input matInput cdkFocusInitial type="number" inputmode="numeric"  pattern="[0-9]*" formControlName="points" (keypress)="preventDecimal($event)" (keyup.enter)="onYesClick()">
+              <mat-error *ngIf="isInvalid('points')">{{pointsError}}</mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{outofLabel}}</mat-label>
+              <input matInput cdkFocusInitial type="number" inputmode="numeric"  pattern="[0-9]*" formControlName="outof" (keypress)="preventDecimal($event)" (keyup.enter)="onYesClick()">
+              <mat-error *ngIf="isInvalid('outof')">{{outofError}}</mat-error>
+            </mat-form-field>
+          </div>
   
         </div>
   
         <div class="row">
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{descriptionArLabel}}</mat-label>
+              <textarea matInput cdkFocusInitial formControlName="descriptionAr" (keyup.enter)="onYesClick()"></textarea>
+              <mat-error *ngIf="isInvalid('descriptionAr')">{{descriptionArError}}</mat-error>
+            </mat-form-field>
+          </div>
   
-          <mat-form-field>
-            <mat-label>{{roleLabel}}</mat-label>
-            <mat-select formControlName="role">
-              <mat-option *ngFor="let role of data.roles" [value]="role.role">{{role.role}}</mat-option>
-            </mat-select>
-            <mat-error *ngIf="isInvalid('role')">{{roleError}}</mat-error>
-          </mat-form-field>
+        </div>
   
+        <div class="row">
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{descriptionEnLabel}}</mat-label>
+              <textarea matInput cdkFocusInitial formControlName="descriptionEn" (keyup.enter)="onYesClick()"></textarea>
+              <mat-error *ngIf="isInvalid('descriptionEn')">{{descriptionEnError}}</mat-error>
+            </mat-form-field>
+          </div>
+  
+        </div>
+  
+        <div class="row">
+          <div class="col">
+            <mat-form-field appearance="outline">
+              <mat-label>{{notesLabel}}</mat-label>
+              <textarea matInput cdkFocusInitial formControlName="notes" (keyup.enter)="onYesClick()"></textarea>
+              <mat-error *ngIf="isInvalid('notes')">{{notesError}}</mat-error>
+            </mat-form-field>
+          </div>
         </div>
   
       </form>
@@ -58,7 +150,7 @@
   </nb-card-body>
   <nb-card-footer>
     <div mat-dialog-actions>
-      <button mat-button (click)="onYesClick()">{{submitButton}}</button>
+      <button [disabled]="data.categories.length == 0 || this.isInvalid('all')" mat-button (click)="onYesClick()">{{submitButton}}</button>
       <button mat-button (click)="onNoClick()">{{cancelButton}}</button>
     </div>
   </nb-card-footer>
